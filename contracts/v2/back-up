@@ -1,0 +1,144 @@
+// SPDX-License-Identifier: UNLICENSED
+
+// pragma solidity ^0.8.2;
+pragma solidity ^0.8.2;
+
+import "./aave/FlashLoanReceiverBaseV2.sol";
+import "../../interfaces/v2/ILendingPoolAddressesProviderV2.sol";
+import "../../interfaces/v2/ILendingPoolV2.sol";
+// import "../../interfaces/IUniswapV2Router02.sol"; // Interface for Uniswap
+// import "../../interfaces/IERC20.sol";  // Interface for ERC20 tokens
+
+// import "../../node_modules/@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "../../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// import "../../interfaces/IUniswapV2Router02.sol";
+import "../../interfaces/uniswap-v2-periphery/contracts/UniswapV2Router02.sol";
+
+
+contract FlashloanV2Arbitrage is FlashLoanReceiverBaseV2, Withdrawable {
+
+    address public uniswapRouterAddress;
+    address public sushiswapRouterAddress;
+    
+    constructor(address _addressProvider, address _uniswapRouter, address _sushiswapRouter) 
+        FlashLoanReceiverBaseV2(_addressProvider) public {
+        uniswapRouterAddress = _uniswapRouter;
+        sushiswapRouterAddress = _sushiswapRouter;
+    }
+
+    /**
+     * @dev This function executes the flash loan and performs arbitrage trading.
+     */
+    function executeOperation(
+        address[] calldata assets,
+        uint256[] calldata amounts,
+        uint256[] calldata premiums,
+        address initiator,
+        bytes calldata params
+    )
+        external
+        override
+        returns (bool)
+    {
+        // Your logic for arbitrage starts here
+        address asset = assets[0];
+        uint amount = amounts[0];
+        
+        // 1. Buy on Uniswap
+        uint amountReceived = buyOnUniswap(asset, amount);
+        
+        // 2. Sell on SushiSwap
+        uint profit = sellOnSushiSwap(asset, amountReceived);
+
+        // Ensure that the profit is greater than the loan + premiums
+        uint amountOwing = amounts[0].add(premiums[0]);
+        require(profit > amountOwing, "Not enough profit to repay the loan!");
+
+        // Approve LENDING_POOL to pull the owed amount
+        IERC20(asset).approve(address(LENDING_POOL), amountOwing);
+
+        return true;
+    }
+
+    /**
+     * @dev Buys tokens on Uniswap with a given amount of `asset`.
+     */
+    function buyOnUniswap(address asset, uint amountIn) internal returns (uint) {
+        address;
+        path[0] = uniswapRouterAddress;  // Start with WETH or the asset you have
+        path[1] = asset;  // The asset you want to buy
+
+        IUniswapV2Router02 uniswapRouter = IUniswapV2Router02(uniswapRouterAddress);
+        
+        // Execute the swap on Uniswap
+        uint[] memory amountsOut = uniswapRouter.swapExactETHForTokens(
+            0, // Accept any amount of tokens
+            path,
+            address(this),
+            block.timestamp
+        );
+
+        return amountsOut[1];  // Return the amount of tokens bought
+    }
+
+    /**
+     * @dev Sells tokens on SushiSwap.
+     */
+    function sellOnSushiSwap(address asset, uint amountIn) internal returns (uint) {
+        address;
+        path[0] = asset;  // The asset you have
+        path[1] = uniswapRouterAddress;  // Return to WETH or your base token
+
+        IUniswapV2Router02 sushiSwapRouter = IUniswapV2Router02(sushiswapRouterAddress);
+        
+        // Approve SushiSwap to spend the tokens
+        IERC20(asset).approve(sushiswapRouterAddress, amountIn);
+
+        // Execute the swap on SushiSwap
+        uint[] memory amountsOut = sushiSwapRouter.swapExactTokensForETH(
+            amountIn,
+            0,  // Accept any amount of ETH
+            path,
+            address(this),
+            block.timestamp
+        );
+
+        return amountsOut[1];  // Return the amount of ETH received
+    }
+
+    /*
+     *  Flash loan functionality as in your existing code.
+     */
+    function _flashloan(address[] memory assets, uint256[] memory amounts) internal {
+        address receiverAddress = address(this);
+        address onBehalfOf = address(this);
+        bytes memory params = "";
+        uint16 referralCode = 0;
+
+        uint256[] memory modes = new uint256[](assets.length);
+
+        for (uint256 i = 0; i < assets.length; i++) {
+            modes[i] = 0;  // Flash loan
+        }
+
+        LENDING_POOL.flashLoan(
+            receiverAddress,
+            assets,
+            amounts,
+            modes,
+            onBehalfOf,
+            params,
+            referralCode
+        );
+    }
+
+    function flashloan(address _asset) public onlyOwner {
+        address;
+        assets[0] = _asset;
+
+        uint256;
+        amounts[0] = 1 ether;  // For example, 1 ETH
+
+        _flashloan(assets, amounts);
+    }
+}

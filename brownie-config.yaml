@@ -12,6 +12,10 @@ dependencies:
 # path remapping to support OpenZepplin imports with NPM-style path
 compiler:
   solc:
+    # version: 0.8.2
+    optimizer:
+      enabled: true
+      runs: 200
     remappings:
       - "@openzeppelin=OpenZeppelin/openzeppelin-contracts@3.0.0"
 networks:
@@ -22,6 +26,29 @@ networks:
   kovan:
     aave_lending_pool_v2: "0x88757f2f99175387ab4c6a4b3067c77a695b0349"
     weth: "0xd0a1e359811322d97991e03f863a0c30c2cf029c"
+  goerli:
+    aave_lending_pool_v2: "0x4F01AeD16D97E3aB5ab2B501154DC9bb0F1A5A2C"  # Goerli equivalent
+    weth: "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6"
+  mumbai: #this is for polygon/matic
+    aave_lending_pool_v2: "0x5E52dEc931FFb32f609681B8438A51c675cc232d"  # Aave V2 Mumbai
+    weth: "0x9c3c9283d3e44854697cd22d3faa240cfb032889"                  # Goerli WETH
+  sepolia:
+    aave_lending_pool_v2: "0x43cdd41f481905bfc2255eF62Aee0fA3E80970f8"  # Sepolia equivalent for Aave V2
+    # weth: "0xD0A1E359811322d97991E03f863a0C30C2cf029C"                  # WETH for Sepolia
+    # weth: "0xd38E5c25935291fFD51C9d66C3B7384494bb099A" # this is not weth but seth as I could not gt wrapped eth on the sepolia testnet
+    # weth: "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43"  
+    weth: "0x7b79995e5f793a07bc00c21412e50ecae098e7f9" # WETH for Mumbai
+  amoy:
+    aave_lending_pool_v2: "0x3986d5567a0B7d9364c84861B001f07806CC4322"
+    weth: "0x0000000000000000000000000000000000000000"
+    eth: "0x0000000000000000000000000000000000000000"
+    matic: "0x0000000000000000000000000000000000000000"
+  polygon-mainnet:
+    aave_lending_pool_v2: "0x3986d5567a0B7d9364c84861B001f07806CC4322"
+    weth: "0x7ceb23fd6bc0419040894d952367706d073d0469"
+    eth: "0x0000000000000000000000000000000000000000"
+    matic: "0x0000000000000000000000000000000000000000"
+
   mainnet:
     aave_lending_pool_v2: "0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5"
     weth: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
